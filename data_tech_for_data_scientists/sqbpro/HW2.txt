@@ -1,0 +1,46 @@
+--Q1.
+SELECT prod_name, prod_price
+FROM Products
+WHERE prod_price >= 3 AND prod_price <= 6
+ORDER BY prod_price;
+
+--Q2
+--The issue with the SQL statement is that the WHERE keyword should come before 
+--the ORDER BY keyword to conform to the correct sequence of SQL commands.
+
+--Q3
+SELECT prod_id, prod_price, prod_price * 0.9 AS sale_price
+FROM Products;
+
+--Q4
+--a)
+SELECT SUM(quantity)
+FROM OrderItems;
+
+--b)
+SELECT SUM(quantity), prod_id
+FROM OrderItems
+WHERE prod_id =  'BR01';
+
+--Q5
+SELECT MAX(prod_price) AS max_price
+FROM Products
+WHERE prod_price <= 10;
+
+--Q6
+--a)
+SELECT order_num
+FROM OrderItems
+GROUP BY order_num
+HAVING SUM(quantity) >= 100;
+
+--b)
+SELECT order_num
+FROM OrderItems
+GROUP BY order_num
+HAVING SUM(quantity * item_price) >= 1000
+ORDER BY order_num;
+
+--Q7
+--The 'items' alias is holding an integer value which is not associated to any
+--particular field but rather the entire OrderItems table itself. 

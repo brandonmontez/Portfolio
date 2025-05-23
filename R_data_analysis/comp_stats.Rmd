@@ -1,0 +1,279 @@
+---
+output:
+  html_document: default
+  pdf_document: default
+---
+ ---
+title: "306064560_stats102a_hw5"
+author: "Brandon Montez"
+date: "`r format(Sys.Date(), '%D')`"
+output:
+  html_document:
+    toc: yes            # creates table of contents
+    toc_depth: 4        # toc will include headers <= ####
+    toc_float: yes      # toc always on left of page
+    code_folding: show  # allows hiding of code
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+source("306064560_stats102a_hw5.R")
+```
+
+# Question 1
+## 1
+```{r}
+bisection_method <- function(f, a, b, tol = 1e-8, max_iter = 1000) {
+  # A short description of the function: Solves a root-finding problem using the Bisection method
+  # Args:
+  # f: Function to find the root of
+  # a: Left endpoint of the interval (numeric)
+  # b: Right endpoint of the interval (numeric)
+  # tol: Tolerance for stopping criterion (numeric, default is 1e-8)
+  # max_iter: Maximum number of iterations allowed (integer, default is 1000)
+  # Return:
+  # List of size 2:
+  #   root: Approximate root of the function (numeric)
+  #   iter: Number of iterations to find the root (numeric)
+  
+  if (f(a) * f(b) > 0) {
+    stop("The function should have opposite signs at the interval endpoints.")
+  }
+  
+  iter <- 0
+  while (abs(b - a) > tol && iter < max_iter) {
+    c <- (a + b) / 2
+    
+    if (identical(all.equal(f(c), 0), TRUE)) {
+      break
+    }
+    
+    if (f(a) * f(c) < 0) {
+      b <- c
+    } else {
+      a <- c
+    }
+    
+    iter <- iter + 1
+  }
+  
+  root <- (a + b) / 2
+  list(root = root, iter = iter)
+}
+
+# Equation (a)
+f1 <- function(x) {
+  x^3 + 23
+}
+
+# Equation (b)
+f2 <- function(x) {
+  x^x - 18
+}
+
+# Equation (c)
+f3 <- function(x) {
+  exp(-x^2) - 1/10
+}
+```
+
+## 1.1a
+For equation (a), the interval is [-5, 0] and the estimated number of iterations required is 29
+```{r Question 1.1a}
+root_a <- bisection_method(f1, -5, 0)
+cat("Root of equation (a):", root_a$root, "\n")
+cat("Iterations:", root_a$iter, "\n")
+```
+
+## 1.1b
+For equation (b), the interval is [2, 3] and the estimated number of iterations required is 27
+```{r Question 1.1b}
+root_b <- bisection_method(f2, 2, 3)
+cat("Root of equation (b):", root_b$root, "\n")
+cat("Iterations:", root_b$iter, "\n")
+```
+
+## 1.1c
+For equation (c), the interval is [0, 2] and the estimated number of iterations required is 28
+```{r Question 1.1c}
+root_c <- bisection_method(f3, 0, 2)
+cat("Root of equation (c):", root_c$root, "\n")
+cat("Iterations:", root_c$iter, "\n")
+```
+
+To find g(x), we can rearrange (b) to solve for x.  
+
+(b) = x^x - 18 = 0  
+-> x^x = 18  
+xlog(x) = log(18)  
+log(x) = log(18^(1/x))  
+x = 18^(1/x)  
+
+Thus, our g(x) = 18^(1/x).  
+
+Algorithm for Fixed Point Iteration method:  
+
+Set the initial guess x0 and the stopping criteria (tolerance and maximum iterations).  
+For each iteration,  
+  Compute the next value x1 = g(x0).  
+  Check for convergence: If |x1 - x0| < tolerance, then the method has converged, and x1 is the approximate root. Otherwise, set x0 = x1 and repeat.
+
+## 1.2
+```{r Question 1.2}
+fixed_point_iteration <- function(g, x0, tol = 1e-8, max_iter = 1000) {
+  # A short description of the function: Solves a root-finding problem using the Fixed Point Iteration method
+  # Args:
+  # g: Function derived from the original equation f(x) = 0
+  # x0: Initial guess (numeric)
+  # tol: Tolerance for stopping criterion (numeric, default is 1e-8)
+  # max_iter: Maximum number of iterations allowed (integer, default is 1000)
+  # Return:
+  # root: Approximate root of the function (numeric)
+  
+  iter <- 0
+  
+  while (iter < max_iter) {
+    x1 <- g(x0)
+    if (abs(x1 - x0) < tol) {
+      break
+    }
+    x0 <- x1
+    iter <- iter + 1
+  }
+  root <- x1
+  root
+}
+
+# Define g(x) for equation (b): x^x - 18 = 0
+g_b <- function(x) {
+  18^(1/x)
+}
+
+# Initial guess
+x0_b <- 2.5
+
+# Solve
+root_b_fixed_point <- fixed_point_iteration(g_b, x0_b)
+cat("Root of equation (b) using Fixed Point Iteration:", root_b_fixed_point, "\n")
+```
+
+Note: I was not able to get the function g(x) to converge onto the root. It appears that it has a harmonic convergence between 1.658585 and 5.712594 as g(1.658585) = 5.712594 and g(5.712594) = 1.658585. I tried various other forms of g(x), such as:  
+x * log(x) - 18 + x, but this restricts negative inputs and, given an initial guess close to the root, will become negative on the second iteration, resulting in NaN values.  
+x^x - 18 + x does not work as a negative input to x^x is treated in R as a complex number, so this also came up with NaN values.  
+
+I have verified that g(x) crosses the root at x = y with a graphing calculator, and performing a linear transformation on g(x) such as 2 * g(x) ends up in a function that converges, yet it does not provide the correct root, and I could not figure out how to inverse the transformation to get the correct answer.
+
+## 1.3a
+The function to find the square root using Newton's method can be defined as f(x) = x^2 - a = 0. Where f'(x) = 2x, and,  
+
+x1 = x0 - f(x0) / f'(x0).
+
+Algorithm for Newton's Method:  
+
+Initialize x0 as half of a.  
+Set the iteration counter, iter, to 0.  
+While iter is less than iter_max:  
+  Update the estimate x1 using the formula x1 = x0 - (x0^2 - a) / (2 * x0).  
+  If verbose is TRUE, print the iteration number, current estimate, and the difference between the current and previous estimate.  
+  Check if the absolute difference between x1 and x0 is less than tol. If so, break the loop.  
+  Set x0 to x1.  
+  Increment the iteration counter, iter, by 1.  
+Return x1, the final estimate of the square root.  
+
+## 1.3b
+```{r Question 1.3b}
+sqrt_5 <- get_sqrt(5, verbose = TRUE)
+cat("Square root of 5:", sqrt_5, "\n")
+```
+
+## 1.3c
+The program would change by adding an additional parameter for the root we want to take (root), and then using that parameter to form our f(x) and f'(x), where f(x) = x0^root - a, and
+f'(x) = root * x0^(root-1).
+
+The iterative equation would then be: g(x) = x0 - (x0^root - a)/(root * x0^(root-1)).
+
+## 1.3d
+Algorithm for get_abroot() function:
+
+Initialize x0 as half of a.  
+Set the iteration counter, iter, to 0.  
+While iter is less than iter_max:  
+  Update the estimate x1 using the formula x1 = x0 - (x0^root - a) / (root * x0^(root - 1)).  
+  If verbose is TRUE, print the iteration number, current estimate, and the difference between the current and previous estimate.  
+  Check if the absolute difference between x1 and x0 is less than tol. If so, break the loop.
+  Set x0 to x1.  
+  Increment the iteration counter, iter, by 1.  
+Return x1, the final estimate of the arbitrary root.  
+
+```{r Question 1.3d}
+cube_root_8 <- get_abroot(8, 3, verbose = TRUE)
+cat("Cube root of 8:", cube_root_8, "\n")
+```
+## 1.3e
+```{r Question 1.3e}
+seventh_root_13 <- get_abroot(13, 7, verbose = TRUE)
+cat("Seventh root of 13:", seventh_root_13, "\n")
+```
+
+
+## 1.3f
+```{r Question 1.3f}
+result <- get_abroot_with_errors(13, 7, verbose = TRUE)
+cat("Seventh root of 13:", result$root, "\n")
+cat("Errors from e1 to e4:", result$errors[1:4], "\n")
+```
+
+# 2
+##a  
+To find the minimum of the function f(x) = x^n - nalog(x), we need to find the critical points where the first derivative f'(x) is equal to 0 and the second derivative f''(x) is greater than 0.
+
+First derivative:  
+f'(x) = nx^(n-1) - na/x  
+
+Second derivative:  
+f''(x) = n(n-1)x^(n-2) + na/x^2  
+
+Now let's set f'(x) = 0,  
+
+0 = nx^(n-1) - na/x  
+x^(n-1) = a/x  
+(n-1)log(x) = log(a/x)  
+nlog(x) - log(x) = log(a) - log(x)  
+log(x) = log(a^(1/n))  
+x = a^(1/n)  
+
+Hence, f(x) = 0 when x = a^(1/n), now the second derivative must be greater than 0 at those points to be a minimum. 
+
+f''(a^(1/n)) = n(n-1)(a^(1/n))^(n-2) + na/(a^(1/n)^2) > 0
+
+Since n > 0, a > 0, and x > 0, we know that f''(x) > 0 for all instances where x = a^(1/n).
+Hence our minimum is found at x = a^(1/n).
+
+##b  
+Newton's method for finding the minimum involves iterating the following formula:
+x1 = x0 - f'(x0) / f''(x0)
+
+Therefore, 
+
+x1 = x0 - (nx0^(n-1) - na/x0) / (n(n-1)x0^(n-2) + na/x0^2))
+
+##c
+```{r Question 2c}
+f_expr <- expression(x^n - n*alpha*log(x))
+min_f <- get_min(f_expr, x0 = 1, n = 2, alpha = 3)
+cat("Minimum of f for n = 2 and α = 3:", min_f, "\n")
+```
+
+
+
+## d
+```{r Question 2d}
+result <- get_min_with_steps(f_expr, x0 = 1, n = 2, alpha = 3)
+
+x_vals <- seq(0.1, 3, length.out = 100)
+y_vals <- sapply(x_vals, function(x) with(list(x = x, n = 2, alpha = 3), eval(f_expr)))
+steps_y_vals <- sapply(result$steps, function(x) with(list(x = x, n = 2, alpha = 3), eval(f_expr)))
+
+plot(x_vals, y_vals, type = "l", main = "Function f(x) with Steps Taken by Newton's Method", xlab = "x", ylab = "f(x)")
+points(result$steps, steps_y_vals, col = "red")
+```

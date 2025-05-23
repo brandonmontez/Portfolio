@@ -1,0 +1,73 @@
+---
+title: "Stat 184 HW 4"
+author: "Brandon Montez"
+output:
+  pdf_document: default
+  html_notebook: default
+---
+# Q1
+## (a)
+```{r}
+library(synthpop)
+data(SD2011)
+```
+
+## (b)
+```{r}
+library(diffpriv)
+SD2011 <- SD2011[!is.na(SD2011$income),]
+
+f <- function(X) mean(X)
+M <- DPMechGaussian(target = f)
+
+bs <- function(n, var=SD2011$income){var[sample.int(n=length(var),size=n, replace=TRUE)]}
+M <- sensitivitySampler(M, oracle = bs, n = nrow(SD2011), m=10000)
+sens_f <- M@sensitivity
+```
+
+## (c)
+
+```{r}
+sd_noise <- sens_f / 0.2
+
+r <- function(x, M, mu=0.2){f(x) + rnorm(n=1, mean=0, sd = M@sensitivity / mu)}
+
+replicate(5, r(SD2011$income, M))
+```
+
+
+## (d)
+
+```{r}
+SD2011 <- SD2011[SD2011$income > 0,]
+
+f_log <- function(X) mean(log(X))
+M_log <- DPMechGaussian(target = f_log) 
+bs_log <- function(n, var=log(SD2011$income)){var[sample.int(n=length(var),size=n, replace=TRUE)]}
+M_log <- sensitivitySampler(M_log, oracle = bs_log, n = nrow(SD2011), m=10000)
+sens_f_log <- M_log@sensitivity
+
+sd_noise_log <- sens_f_log / 0.2
+r_log <- function(x, M, mu=0.2){f_log(x) + rnorm(n=1, mean=0, sd = M@sensitivity / mu)}
+
+replicate(5, exp(r_log(SD2011$income, M_log)))
+```
+The log income model is better as it centers the data and more closely resembles a normal distribution. This makes sense as our sensitive variable is income, which typically has a skewed distribution.
+
+# Q2
+## (a)
+```{r}
+vars <- c("sex", "age", "placesize", "region", "edu", "socprof", "unempdur", "income", "marital")
+SD2011_sub <- SD2011[,vars]
+
+SD2011_syn <- syn(SD2011_sub, m=5)
+```
+
+## (b)
+
+```{r}
+compare.synds(SD2011_syn, SD2011_sub, vars = "income", stat = "counts", breaks = 25, table = TRUE)
+```
+The synthetic data appears to be extremely similar to the original data, given the very low S_pMSE value.
+
+This is supported by visual inspection of the histograms. 
